@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MINEDEX Stock Exchange 2.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        mine: {
+                            obsidian: '#15121f',
+                            stone: '#2d2a38',
+                            darkstone: '#1b1824',
+                            border: '#4a4559',
+                            green: '#3c913c',
+                            gold: '#e6c229',
+                            rose: '#bf2121',
+                            cyan: '#29b6f6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0c0a12;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .pixel-font {
+            font-family: 'Press Start 2P', monospace;
+        }
+        .minecraft-box {
+            background-color: #1b1824;
+            border: 3px solid #3b354a;
+            box-shadow: inset -3px -3px 0px #110e17, inset 3px 3px 0px #4d465c, 0 8px 20px rgba(0,0,0,0.7);
+        }
+        .minecraft-button {
+            background-color: #3b354a;
+            border: 3px solid #24202d;
+            box-shadow: inset -2px -2px 0px #1a1620, inset 2px 2px 0px #5c5370;
+            transition: all 0.1s ease;
+        }
+        .minecraft-button:hover {
+            background-color: #4d465c;
+            border-color: #3b354a;
+        }
+        .minecraft-button:active {
+            box-shadow: inset 2px 2px 0px #1a1620;
+            transform: translateY(1px);
+        }
+        .minecraft-input {
+            background-color: #0c0a12;
+            border: 2px solid #3b354a;
+            box-shadow: inset 2px 2px 0px #050408;
+        }
+        .minecraft-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 14px;
+            background: #110e17;
+            border: 2px solid #3b354a;
+            box-shadow: inset 2px 2px 0px #050408;
+            outline: none;
+            border-radius: 0px;
+        }
+        .minecraft-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 28px;
+            background: #e6c229;
+            border: 2px solid #ffffff;
+            box-shadow: inset -2px -2px 0px #8b7500, inset 2px 2px 0px #fff7ae, 0 4px 6px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.1s ease;
+        }
+        .minecraft-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+            background: #f4d03f;
+        }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0c0a12; }
+        ::-webkit-scrollbar-thumb { background: #3b354a; border-radius: 2px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-emerald-500 selection:text-black">
+
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <main id="app" class="flex-1 flex flex-col relative z-10">
+        <!-- Dynamic Render -->
+    </main>
+
+    <footer class="py-4 text-center text-xs text-slate-500 border-t border-slate-900 bg-black/80 relative z-10 font-mono">
+        MINEDEX Stock Exchange 2.0 &bull; E-Cell Entrepreneurship Event &bull; Day 2 Simulation
+    </footer>
+
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            try {
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'buy') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'sell') {
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(500, now);
+                    osc.frequency.exponentialRampToValueAtTime(250, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'explosion' || type === 'chaos') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(100, now);
+                    osc.frequency.linearRampToValueAtTime(30, now + 0.35);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.start(now);
+                    osc.stop(now + 0.05);
+                } else if (type === 'slide') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(200, now);
+                    gain.gain.setValueAtTime(0.03, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+                    osc.start(now);
+                    osc.stop(now + 0.04);
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        const ADMIN_PASSWORD = "Ecell2627";
+        const BROADCAST_CHANNEL_NAME = "minedex_stock_exchange_v2_sync";
+
+        const INITIAL_STOCKS = [
+            { id: 'WOD', name: 'Wood', category: 'Construction', basePrice: 100.00, price: 100.00, change: 0.0, min: 10, max: 800, icon: 'fa-tree' },
+            { id: 'IRN', name: 'Iron', category: 'Manufacturing', basePrice: 250.00, price: 250.00, change: 0.0, min: 50, max: 1500, icon: 'fa-cube' },
+            { id: 'DIA', name: 'Diamond', category: 'Luxury', basePrice: 1000.00, price: 1000.00, change: 0.0, min: 200, max: 8000, icon: 'fa-gem' },
+            { id: 'EMD', name: 'Emerald', category: 'Finance', basePrice: 500.00, price: 500.00, change: 0.0, min: 100, max: 4000, icon: 'fa-coins' },
+            { id: 'RDS', name: 'Redstone', category: 'Technology', basePrice: 300.00, price: 300.00, change: 0.0, min: 50, max: 2500, icon: 'fa-bolt' },
+            { id: 'WHT', name: 'Wheat', category: 'Agriculture', basePrice: 50.00, price: 50.00, change: 0.0, min: 10, max: 600, icon: 'fa-seedling' },
+            { id: 'COW', name: 'Cow', category: 'Food', basePrice: 80.00, price: 80.00, change: 0.0, min: 20, max: 800, icon: 'fa-cow' },
+            { id: 'NET', name: 'Netherite', category: 'High-Tech', basePrice: 2000.00, price: 2000.00, change: 0.0, min: 500, max: 15000, icon: 'fa-fire' }
+        ];
+
+        let state = {
+            view: 'landing',
+            currentTeamName: localStorage.getItem('minedex_team_name') || null,
+            isAdmin: (localStorage.getItem('minedex_is_admin') === 'true'),
+            teams: JSON.parse(localStorage.getItem('minedex_teams_data') || '{}'),
+            stocks: JSON.parse(localStorage.getItem('minedex_stocks_data') || JSON.stringify(INITIAL_STOCKS)),
+            timer: parseInt(localStorage.getItem('minedex_timer_val') || '120'),
+            timerRunning: (localStorage.getItem('minedex_timer_running') === 'true'),
+            currentRound: parseInt(localStorage.getItem('minedex_round_val') || '1'),
+            breakingNews: JSON.parse(localStorage.getItem('minedex_news_log') || JSON.stringify([
+                { round: 'R1', stock: 'System', change: '0%', old: '₹250.00', new: '₹250.00', text: 'Market Open – Welcome to MINEDEX. Await breaking news.', time: '12:50:25 pm' }
+            ])),
+            tickerMessages: JSON.parse(localStorage.getItem('minedex_ticker_msgs') || JSON.stringify([
+                'Welcome to MINEDEX Stock Exchange 2.0', 'Trade wisely and monitor market sliders'
+            ]))
+        };
+
+        const bc = new BroadcastChannel(BROADCAST_CHANNEL_NAME);
+        bc.onmessage = (event) => {
+            if (event.data && event.data.type === 'SYNC_STATE') {
+                state = event.data.state;
+                render();
+            }
+        };
+
+        function saveAndBroadcast() {
+            localStorage.setItem('minedex_team_name', state.currentTeamName || '');
+            localStorage.setItem('minedex_is_admin', state.isAdmin);
+            localStorage.setItem('minedex_teams_data', JSON.stringify(state.teams));
+            localStorage.setItem('minedex_stocks_data', JSON.stringify(state.stocks));
+            localStorage.setItem('minedex_timer_val', state.timer);
+            localStorage.setItem('minedex_timer_running', state.timerRunning);
+            localStorage.setItem('minedex_round_val', state.currentRound);
+            localStorage.setItem('minedex_news_log', JSON.stringify(state.breakingNews));
+            localStorage.setItem('minedex_ticker_msgs', JSON.stringify(state.tickerMessages));
+
+            bc.postMessage({ type: 'SYNC_STATE', state: state });
+            render();
+        }
+
+        setInterval(() => {
+            if (state.timerRunning && state.timer > 0) {
+                state.timer--;
+                if (state.timer <= 0) {
+                    state.timerRunning = false;
+                    showToast("Market round timer expired!", "warning");
+                }
+                saveAndBroadcast();
+            }
+        }, 1000);
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const bgCol = type === 'success' ? 'bg-[#3c913c] text-white border-[#276127]' : (type === 'warning' ? 'bg-amber-600 text-white border-amber-800' : 'bg-[#bf2121] text-white border-red-900');
+            toast.className = `pointer-events-auto px-4 py-3 rounded-none border-2 shadow-2xl font-mono text-xs flex items-center gap-3 transition-all transform translate-y-2 opacity-0 ${bgCol}`;
+            toast.innerHTML = `<i class="fa-solid fa-${type === 'success' ? 'circle-check' : (type === 'warning' ? 'triangle-exclamation' : 'circle-xmark')}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function formatINR(val) {
+            return '₹' + Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function render() {
+            const app = document.getElementById('app');
+            if (!app) return;
+
+            if (state.view === 'landing') {
+                app.innerHTML = renderLanding();
+            } else if (state.view === 'trader-login') {
+                app.innerHTML = renderTraderLogin();
+            } else if (state.view === 'admin-login') {
+                app.innerHTML = renderAdminLogin();
+            } else if (state.view === 'trader') {
+                app.innerHTML = renderTraderDashboard();
+            } else if (state.view === 'admin') {
+                app.innerHTML = renderAdminDashboard();
+            }
+        }
+
+        function renderLanding() {
+            return `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 text-center relative">
+                    <div class="mb-6 z-10">
+                        <span class="px-6 py-2.5 rounded-none text-xs font-bold uppercase tracking-widest bg-[#276127]/40 text-emerald-400 border-2 border-emerald-500/60 shadow-[0_0_20px_rgba(60,145,60,0.3)] pixel-font">
+                            MINEDEX
+                        </span>
+                    </div>
+
+                    <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-3 z-10 pixel-font text-emerald-400 drop-shadow-[0_4px_0px_#103810]">
+                        Stock Exchange 2.0
+                    </h1>
+                    <p class="text-slate-400 text-xs md:text-sm max-w-md mb-12 z-10 font-mono">
+                        The Minecraft Stock Trading Competition
+                    </p>
+
+                    <div class="w-full max-w-sm flex flex-col gap-5 z-10">
+                        <button onclick="playSound('click'); switchView('trader-login')" class="w-full py-4 px-6 minecraft-button font-bold text-emerald-400 hover:text-white transition-all text-sm pixel-font">
+                            Trader Team Login
+                        </button>
+                        <button onclick="playSound('click'); switchView('admin-login')" class="w-full py-4 px-6 minecraft-button font-bold text-amber-400 hover:text-white transition-all text-sm pixel-font">
+                            Organizer Admin Access
+                        </button>
+                    </div>
+
+                    <div class="mt-20 text-[10px] font-mono text-slate-500 z-10">
+                        MINEDEX &bull; E-Cell Entrepreneurship Event &bull; Day 2
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTraderLogin() {
+            return `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative">
+                    <div class="w-full max-w-md minecraft-box p-8 rounded-none">
+                        <div class="text-center mb-6">
+                            <span class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest bg-emerald-950 text-emerald-400 border border-emerald-800 pixel-font">
+                                TRADER TEAM
+                            </span>
+                            <h2 class="text-xl font-extrabold text-white mt-4 pixel-font">Join as Trader Team</h2>
+                            <p class="text-xs text-slate-400 mt-2 font-mono">Enter your team name. If it exists, you'll rejoin. Otherwise a new team is created with ₹1,00,000.</p>
+                        </div>
+                        
+                        <form onsubmit="handleTraderLoginSubmit(event)" class="space-y-4">
+                            <div>
+                                <input type="text" id="teamNameInput" required placeholder="e.g. Team Creeper" 
+                                    class="w-full minecraft-input rounded-none px-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-emerald-500 font-mono text-sm">
+                            </div>
+                            <div class="flex items-center gap-3 pt-2">
+                                <button type="button" onclick="playSound('click'); switchView('landing')" class="flex-1 py-3.5 px-4 minecraft-button font-semibold text-slate-300 text-xs">
+                                    Back
+                                </button>
+                                <button type="submit" class="flex-1 py-3.5 px-4 minecraft-button font-bold text-emerald-400 text-xs pixel-font">
+                                    Enter Floor
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleTraderLoginSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('teamNameInput').value.trim();
+            if (!name) return;
+
+            state.currentTeamName = name;
+            if (!state.teams[name]) {
+                const initialPortfolio = {};
+                state.stocks.forEach(s => initialPortfolio[s.id] = 0);
+                state.teams[name] = {
+                    cash: 100000.00,
+                    portfolio: initialPortfolio,
+                    tradesCount: 0
+                };
+            }
+            state.view = 'trader';
+            playSound('click');
+            saveAndBroadcast();
+            showToast(`Connected as ${name}!`);
+        }
+
+        function renderAdminLogin() {
+            return `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 relative">
+                    <div class="w-full max-w-md minecraft-box p-8 rounded-none border-amber-600/50">
+                        <div class="text-center mb-6">
+                            <span class="px-3 py-1 text-[10px] font-bold uppercase tracking-widest bg-amber-950 text-amber-400 border border-amber-800 pixel-font">
+                                ADMIN ACCESS
+                            </span>
+                            <h2 class="text-xl font-extrabold text-white mt-4 pixel-font">Organizer Access</h2>
+                            <p class="text-xs text-slate-400 mt-2 font-mono">Enter the admin password to access the control panel.</p>
+                        </div>
+                        
+                        <form onsubmit="handleAdminLoginSubmit(event)" class="space-y-4">
+                            <div>
+                                <input type="password" id="adminPassInput" required placeholder="Admin password" 
+                                    class="w-full minecraft-input rounded-none px-4 py-3.5 text-white placeholder-slate-600 focus:outline-none focus:border-amber-500 font-mono text-sm">
+                            </div>
+                            <div class="flex items-center gap-3 pt-2">
+                                <button type="button" onclick="playSound('click'); switchView('landing')" class="flex-1 py-3.5 px-4 minecraft-button font-semibold text-slate-300 text-xs">
+                                    Back
+                                </button>
+                                <button type="submit" class="flex-1 py-3.5 px-4 minecraft-button font-bold text-amber-400 text-xs pixel-font">
+                                    Enter Panel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleAdminLoginSubmit(e) {
+            e.preventDefault();
+            const pass = document.getElementById('adminPassInput').value;
+            if (pass === ADMIN_PASSWORD) {
+                state.isAdmin = true;
+                state.view = 'admin';
+                playSound('click');
+                saveAndBroadcast();
+                showToast("Admin access granted!", "success");
+            } else {
+                playSound('explosion');
+                showToast("Incorrect password! Hint: Ecell2627", "error");
+            }
+        }
+
+        function renderTraderDashboard() {
+            const team = state.teams[state.currentTeamName] || { cash: 100000, portfolio: {}, tradesCount: 0 };
+            let assetValue = 0;
+            state.stocks.forEach(stock => {
+                const owned = team.portfolio[stock.id] || 0;
+                assetValue += owned * stock.price;
+            });
+            const netWorth = team.cash + assetValue;
+            const pnl = netWorth - 100000;
+            const mins = String(Math.floor(state.timer / 60)).padStart(2, '0');
+            const secs = String(state.timer % 60).padStart(2, '0');
+
+            return `
+                <header class="bg-[#15121f] border-b-2 border-[#3b354a] sticky top-0 z-40">
+                    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="px-2.5 py-1 text-[10px] font-bold bg-[#3c913c] text-white pixel-font">MINEDEX</span>
+                            <h1 class="text-sm md:text-base font-bold text-white pixel-font">Stock Exchange 2.0</h1>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs">
+                            <span class="px-3 py-1 minecraft-box text-slate-300 font-mono">
+                                Round ${state.currentRound} / 4
+                            </span>
+                            <span class="px-3 py-1 minecraft-box text-emerald-400 font-mono font-bold">
+                                ${state.currentTeamName}
+                            </span>
+                            <button onclick="playSound('click'); handleLeave()" class="px-3 py-1 minecraft-button text-rose-400 hover:text-white font-bold">
+                                Leave
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="bg-[#100c17] border-b border-[#24202d]">
+                    <div class="max-w-7xl mx-auto px-4 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="minecraft-box p-4 rounded-none">
+                            <div class="text-[10px] text-slate-400 uppercase font-mono mb-1">PORTFOLIO NET WORTH</div>
+                            <div class="text-lg md:text-xl font-extrabold font-mono text-emerald-400">${formatINR(netWorth)}</div>
+                        </div>
+                        <div class="minecraft-box p-4 rounded-none">
+                            <div class="text-[10px] text-slate-400 uppercase font-mono mb-1">CASH BALANCE</div>
+                            <div class="text-lg md:text-xl font-extrabold font-mono text-white">${formatINR(team.cash)}</div>
+                        </div>
+                        <div class="minecraft-box p-4 rounded-none">
+                            <div class="text-[10px] text-slate-400 uppercase font-mono mb-1">ASSETS VALUE</div>
+                            <div class="text-lg md:text-xl font-extrabold font-mono text-cyan-400">${formatINR(assetValue)}</div>
+                        </div>
+                        <div class="minecraft-box p-4 rounded-none flex items-center justify-between">
+                            <div>
+                                <div class="text-[10px] text-slate-400 uppercase font-mono mb-1">P&L</div>
+                                <div class="text-base md:text-lg font-extrabold font-mono ${pnl >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                                    ${pnl >= 0 ? '+' : ''}${formatINR(pnl)}
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[10px] text-slate-400 uppercase font-mono mb-1">MARKET TIMER</div>
+                                <div class="text-sm md:text-base font-mono font-bold ${state.timerRunning ? 'text-emerald-400' : 'text-amber-400'}">
+                                    ${mins}:${secs}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-[#1b1824] border-t border-[#3b354a] px-4 py-2 flex items-center gap-3 overflow-hidden font-mono text-xs">
+                        <span class="px-2 py-0.5 bg-amber-500 text-black font-bold uppercase text-[10px] pixel-font">BREAKING</span>
+                        <div class="flex items-center gap-6 overflow-x-auto whitespace-nowrap text-slate-300">
+                            ${state.tickerMessages.map(msg => `<span>⚡ ${msg}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-sm font-bold text-white pixel-font flex items-center gap-2">
+                            <i class="fa-solid fa-box text-emerald-400"></i> RESOURCE STOCKS
+                        </h2>
+                        <span class="text-xs font-mono text-slate-400">8 assets &bull; live trading</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        ${state.stocks.map(stock => {
+                            const owned = team.portfolio[stock.id] || 0;
+                            const totalVal = owned * stock.price;
+                            const isPositive = stock.change >= 0;
+                            const badgeColor = isPositive ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800' : 'text-rose-400 bg-rose-950/60 border-rose-800';
+
+                            return `
+                                <div class="minecraft-box p-5 flex flex-col justify-between rounded-none">
+                                    <div>
+                                        <div class="flex items-center justify-between mb-3">
+                                            <div class="flex items-center gap-2.5">
+                                                <div class="w-8 h-8 minecraft-input flex items-center justify-center text-emerald-400 text-sm">
+                                                    <i class="fa-solid ${stock.icon}"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="font-bold text-white text-xs pixel-font">${stock.name}</div>
+                                                    <div class="text-[10px] font-mono text-slate-400">${stock.category}</div>
+                                                </div>
+                                            </div>
+                                            <span class="px-2 py-0.5 text-[10px] font-mono font-bold border ${badgeColor}">
+                                                ${isPositive ? '+' : ''}${stock.change.toFixed(1)}%
+                                            </span>
+                                        </div>
+
+                                        <div class="my-4">
+                                            <div class="text-[10px] font-mono text-slate-400 uppercase">PRICE (Baseline: ${formatINR(stock.basePrice)})</div>
+                                            <div class="text-xl font-extrabold font-mono text-emerald-400">${formatINR(stock.price)}</div>
+                                        </div>
+
+                                        <div class="grid grid-cols-2 gap-2 py-2.5 border-t border-b border-[#3b354a] text-xs mb-4 font-mono">
+                                            <div>
+                                                <span class="text-slate-500 block text-[10px]">Owned:</span>
+                                                <span class="font-bold text-white">${owned}</span>
+                                            </div>
+                                            <div>
+                                                <span class="text-slate-500 block text-[10px]">Value:</span>
+                                                <span class="font-bold text-emerald-400">${formatINR(totalVal)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <input type="number" min="1" value="1" id="qty-${stock.id}" 
+                                                class="w-16 minecraft-input rounded-none px-2 py-2 text-center text-xs font-mono text-white focus:outline-none">
+                                            <button onclick="handleBuy('${stock.id}')" class="flex-1 py-2 minecraft-button font-bold text-xs text-emerald-400 hover:text-white pixel-font">
+                                                BUY
+                                            </button>
+                                        </div>
+                                        <button onclick="handleSell('${stock.id}')" class="w-full py-2 minecraft-button font-bold text-xs text-rose-400 hover:text-white pixel-font">
+                                            SELL
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleBuy(stockId) {
+            const qtyInput = document.getElementById(`qty-${stockId}`);
+            const qty = parseInt(qtyInput ? qtyInput.value : 1);
+            if (isNaN(qty) || qty <= 0) {
+                showToast("Enter a valid quantity.", "error");
+                return;
+            }
+
+            const team = state.teams[state.currentTeamName];
+            const stock = state.stocks.find(s => s.id === stockId);
+            const totalCost = qty * stock.price;
+
+            if (team.cash < totalCost) {
+                playSound('explosion');
+                showToast("Insufficient cash balance!", "error");
+                return;
+            }
+
+            team.cash -= totalCost;
+            team.portfolio[stockId] = (team.portfolio[stockId] || 0) + qty;
+            team.tradesCount++;
+
+            playSound('buy');
+            saveAndBroadcast();
+            showToast(`Successfully bought ${qty} x ${stock.name}!`);
+        }
+
+        function handleSell(stockId) {
+            const qtyInput = document.getElementById(`qty-${stockId}`);
+            const qty = parseInt(qtyInput ? qtyInput.value : 1);
+            if (isNaN(qty) || qty <= 0) {
+                showToast("Enter a valid quantity.", "error");
+                return;
+            }
+
+            const team = state.teams[state.currentTeamName];
+            const stock = state.stocks.find(s => s.id === stockId);
+            const owned = team.portfolio[stockId] || 0;
+
+            if (owned < qty) {
+                playSound('explosion');
+                showToast(`You only own ${owned} units!`, "error");
+                return;
+            }
+
+            const totalRevenue = qty * stock.price;
+            team.cash += totalRevenue;
+            team.portfolio[stockId] -= qty;
+            team.tradesCount++;
+
+            playSound('sell');
+            saveAndBroadcast();
+            showToast(`Successfully sold ${qty} x ${stock.name}!`);
+        }
+
+        function handleLeave() {
+            state.currentTeamName = null;
+            state.view = 'landing';
+            saveAndBroadcast();
+        }
+
+        function renderAdminDashboard() {
+            const teamNames = Object.keys(state.teams);
+            let totalTrades = 0;
+            let leaderNetWorth = 0;
+            let leaderName = 'None';
+
+            teamNames.forEach(tName => {
+                const t = state.teams[tName];
+                totalTrades += t.tradesCount || 0;
+                let assetVal = 0;
+                state.stocks.forEach(s => assetVal += (t.portfolio[s.id] || 0) * s.price);
+                const nw = t.cash + assetVal;
+                if (nw > leaderNetWorth) {
+                    leaderNetWorth = nw;
+                    leaderName = tName;
+                }
+            });
+
+            const mins = String(Math.floor(state.timer / 60)).padStart(2, '0');
+            const secs = String(state.timer % 60).padStart(2, '0');
+
+            return `
+                <header class="bg-[#15121f] border-b-2 border-amber-600/40 sticky top-0 z-40">
+                    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                            <span class="px-2.5 py-1 text-[10px] font-bold bg-amber-600 text-black pixel-font">ADMIN</span>
+                            <h1 class="text-sm md:text-base font-bold text-white pixel-font">Organizer Control Panel</h1>
+                        </div>
+                        <button onclick="playSound('click'); handleAdminExit()" class="px-3 py-1 minecraft-button text-rose-400 hover:text-white text-xs font-bold">
+                            Exit Admin
+                        </button>
+                    </div>
+                </header>
+
+                <div class="bg-[#100c17] border-b border-[#24202d]">
+                    <div class="max-w-7xl mx-auto px-4 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="minecraft-box p-4 rounded-none border-amber-600/40">
+                            <div class="text-[10px] text-slate-400 uppercase font-mono mb-1">TEAMS REGISTERED</div>
+                            <div class="text-xl font-extrabold font-mono text-amber-400">${teamNames.length}</div>
+                        </div>
+                        <div class="minecraft-box p-4 rounded-none border-amber-600/40">
+                            <div class="text-[10px] text-slate-400 uppercase font-mono mb-1">TOTAL TRADES</div>
+                            <div class="text-xl font-extrabold font-mono text-white">${totalTrades}</div>
+                        </div>
+                        <div class="minecraft-box p-4 rounded-none border-amber-600/40">
+                            <div class="text-[10px] text-slate-400 uppercase font-mono mb-1">LEADER NET WORTH</div>
+                            <div class="text-lg font-extrabold font-mono text-emerald-400">${formatINR(leaderNetWorth)} <span class="text-xs text-slate-400 font-sans">(${leaderName})</span></div>
+                        </div>
+                        <div class="minecraft-box p-4 rounded-none border-amber-600/40">
+                            <div class="text-[10px] text-slate-400 uppercase font-mono mb-1">MARKET TIMER</div>
+                            <div class="text-xl font-extrabold font-mono text-cyan-400">${mins}:${secs}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="minecraft-box p-6 rounded-none flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-4 pixel-font flex items-center gap-2">
+                                    <i class="fa-solid fa-clock"></i> ROUND CONTROL
+                                </h3>
+                                <div class="grid grid-cols-4 gap-2 mb-6">
+                                    ${[1, 2, 3, 4].map(r => `
+                                        <button onclick="playSound('click'); setRound(${r})" class="py-2.5 minecraft-button text-xs font-bold ${state.currentRound === r ? 'bg-amber-600 text-black border-amber-400' : 'text-slate-300'} pixel-font">
+                                            R${r}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                                <div class="text-2xl font-mono font-extrabold text-white mb-4">
+                                    ${mins}:${secs} <span class="text-xs font-sans font-normal text-slate-400">(${state.timerRunning ? 'RUNNING' : 'PAUSED'})</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button onclick="playSound('click'); toggleTimer()" class="flex-1 py-2.5 minecraft-button text-xs font-bold text-amber-400 hover:text-white pixel-font">
+                                    ${state.timerRunning ? 'Pause Timer' : 'Start Timer'}
+                                </button>
+                                <button onclick="playSound('click'); resetTimer()" class="px-3 py-2.5 minecraft-button text-xs font-bold text-rose-400 hover:text-white pixel-font">
+                                    Reset 120s
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="minecraft-box p-6 rounded-none flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-4 pixel-font flex items-center gap-2">
+                                    <i class="fa-solid fa-bullhorn"></i> BREAKING NEWS
+                                </h3>
+                                <form onsubmit="handleBroadcastNews(event)" class="space-y-3">
+                                    <textarea id="newsInput" rows="2" required placeholder="Type breaking news..." 
+                                        class="w-full minecraft-input rounded-none p-2.5 text-xs text-white placeholder-slate-600 focus:outline-none font-mono"></textarea>
+                                    <button type="submit" class="w-full py-2.5 minecraft-button text-xs font-bold text-amber-400 hover:text-white pixel-font">
+                                        Broadcast News
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="mt-4 pt-4 border-t border-[#3b354a]">
+                                <button onclick="triggerRandomChaos()" class="w-full py-2.5 minecraft-button text-xs font-bold text-purple-400 hover:text-white pixel-font flex items-center justify-center gap-2">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Trigger Chaos Event
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="minecraft-box p-6 rounded-none flex flex-col justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-4 pixel-font flex items-center gap-2">
+                                    <i class="fa-solid fa-info-circle"></i> MARKET STATUS
+                                </h3>
+                                <div class="space-y-2.5 text-xs font-mono">
+                                    <div class="flex justify-between py-1.5 border-b border-[#3b354a]">
+                                        <span class="text-slate-400">Status</span>
+                                        <span class="font-bold text-emerald-400">OPEN</span>
+                                    </div>
+                                    <div class="flex justify-between py-1.5 border-b border-[#3b354a]">
+                                        <span class="text-slate-400">Timer</span>
+                                        <span class="font-bold text-white">${mins}:${secs}</span>
+                                    </div>
+                                    <div class="flex justify-between py-1.5 border-b border-[#3b354a]">
+                                        <span class="text-slate-400">Round</span>
+                                        <span class="font-bold text-white">${state.currentRound} / 4</span>
+                                    </div>
+                                    <div class="flex justify-between py-1.5">
+                                        <span class="text-slate-400">Teams</span>
+                                        <span class="font-bold text-white">${teamNames.length}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="minecraft-box p-6 rounded-none border-amber-600/40">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="text-xs font-bold uppercase tracking-widest text-amber-400 pixel-font flex items-center gap-2">
+                                <i class="fa-solid fa-sliders"></i> STOCK MANAGEMENT &mdash; 0% BASELINE PRICE VOLATILITY SLIDERS
+                            </h3>
+                            <span class="text-[10px] font-mono text-slate-400">0% = Original Baseline Price</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            ${state.stocks.map(stock => {
+                                const calculatedPrice = Math.max(10, Math.round(stock.basePrice * (1 + stock.change / 100) * 100) / 100);
+                                const isPos = stock.change >= 0;
+
+                                return `
+                                    <div class="minecraft-input p-5 rounded-none flex flex-col justify-between border-2 border-[#3b354a]">
+                                        <div>
+                                            <div class="flex items-center justify-between mb-3">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-7 h-7 minecraft-box flex items-center justify-center text-emerald-400 text-xs">
+                                                        <i class="fa-solid ${stock.icon}"></i>
+                                                    </div>
+                                                    <div class="font-bold text-white text-xs pixel-font">${stock.name}</div>
+                                                </div>
+                                                <span class="px-2 py-0.5 text-[10px] font-mono font-bold border ${isPos ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800' : 'text-rose-400 bg-rose-950/60 border-rose-800'}" id="admin-badge-${stock.id}">
+                                                    ${isPos ? '+' : ''}${stock.change.toFixed(0)}%
+                                                </span>
+                                            </div>
+
+                                            <div class="bg-[#15121f] p-2.5 mb-3 border border-[#3b354a] font-mono text-xs">
+                                                <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                                                    <span>Baseline:</span>
+                                                    <span class="text-white">${formatINR(stock.basePrice)}</span>
+                                                </div>
+                                                <div class="flex justify-between font-bold">
+                                                    <span class="text-slate-300">Live Price:</span>
+                                                    <span class="text-emerald-400" id="admin-price-preview-${stock.id}">${formatINR(calculatedPrice)}</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-4">
+                                                <input type="range" id="admin-slider-${stock.id}" min="-90" max="200" step="1" value="${stock.change}" 
+                                                    oninput="onAdminSliderInput('${stock.id}', this.value)"
+                                                    class="minecraft-slider cursor-pointer">
+                                                <div class="flex justify-between text-[9px] font-mono text-slate-500 mt-1">
+                                                    <span>-90%</span>
+                                                    <span class="text-amber-400 font-bold">0% (Baseline)</span>
+                                                    <span>+200%</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="grid grid-cols-5 gap-1 mb-4">
+                                                <button onclick="setSliderPreset('${stock.id}', -50)" class="py-1 px-1 minecraft-button text-[10px] font-mono text-rose-400 font-bold hover:text-white" title="-50%">-50</button>
+                                                <button onclick="setSliderPreset('${stock.id}', -25)" class="py-1 px-1 minecraft-button text-[10px] font-mono text-rose-300 font-bold hover:text-white" title="-25%">-25</button>
+                                                <button onclick="setSliderPreset('${stock.id}', 0)" class="py-1 px-1 minecraft-button text-[10px] font-mono text-amber-400 font-bold hover:text-white" title="Reset 0% Baseline">0</button>
+                                                <button onclick="setSliderPreset('${stock.id}', 25)" class="py-1 px-1 minecraft-button text-[10px] font-mono text-emerald-300 font-bold hover:text-white" title="+25%">+25</button>
+                                                <button onclick="setSliderPreset('${stock.id}', 50)" class="py-1 px-1 minecraft-button text-[10px] font-mono text-emerald-400 font-bold hover:text-white" title="+50%">+50</button>
+                                            </div>
+                                        </div>
+
+                                        <button onclick="applyAdminPriceChange('${stock.id}')" class="w-full py-2.5 minecraft-button text-xs font-bold text-amber-400 hover:text-white pixel-font">
+                                            APPLY CHANGE
+                                        </button>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <div class="minecraft-box p-6 rounded-none">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-4 pixel-font flex items-center gap-2">
+                            <i class="fa-solid fa-list-check"></i> NEWS IMPACT LOG
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs font-mono text-slate-300">
+                                <thead class="bg-[#100c17] text-slate-400 uppercase border-b border-[#3b354a]">
+                                    <tr>
+                                        <th class="p-3">Round</th>
+                                        <th class="p-3">Stock</th>
+                                        <th class="p-3">Change</th>
+                                        <th class="p-3">Old</th>
+                                        <th class="p-3">New</th>
+                                        <th class="p-3">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-[#3b354a]">
+                                    ${state.breakingNews.map(item => `
+                                        <tr class="hover:bg-[#24202d]/40">
+                                            <td class="p-3 font-bold text-amber-400">${item.round}</td>
+                                            <td class="p-3 font-semibold text-white">${item.stock}</td>
+                                            <td class="p-3 text-emerald-400">${item.change}</td>
+                                            <td class="p-3 text-slate-400">${item.old}</td>
+                                            <td class="p-3 text-white">${item.new}</td>
+                                            <td class="p-3 text-slate-500">${item.time}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            `;
+        }
+
+        function setRound(r) {
+            state.currentRound = r;
+            saveAndBroadcast();
+            showToast(`Round switched to Round ${r}`);
+        }
+
+        function toggleTimer() {
+            state.timerRunning = !state.timerRunning;
+            saveAndBroadcast();
+            showToast(state.timerRunning ? "Market Timer Started!" : "Market Timer Paused!");
+        }
+
+        function resetTimer() {
+            state.timer = 120;
+            state.timerRunning = false;
+            saveAndBroadcast();
+            showToast("Market Timer reset to 120s.");
+        }
+
+        function handleBroadcastNews(e) {
+            e.preventDefault();
+            const input = document.getElementById('newsInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toLowerCase();
+            state.tickerMessages.unshift(text);
+            if (state.tickerMessages.length > 10) state.tickerMessages.pop();
+
+            state.breakingNews.unshift({
+                round: `R${state.currentRound}`,
+                stock: 'General',
+                change: '0%',
+                old: '—',
+                new: '—',
+                text: text,
+                time: timeStr
+            });
+
+            input.value = '';
+            playSound('chaos');
+            saveAndBroadcast();
+            showToast("Breaking news broadcasted globally!");
+        }
+
+        function triggerRandomChaos() {
+            const chaosEvents = [
+                { stockId: 'WOD', change: 75, text: 'Creeper explosion destroys oak forests! Wood surges!' },
+                { stockId: 'DIA', change: 100, text: 'Nether portal glitch! Diamonds skyrocket!' },
+                { stockId: 'EMD', change: -50, text: 'Villager trading monopoly collapses! Emeralds plunge!' },
+                { stockId: 'NET', change: 150, text: 'Ancient debris discovered! Netherite spikes!' }
+            ];
+            const ev = chaosEvents[Math.floor(Math.random() * chaosEvents.length)];
+            const stock = state.stocks.find(s => s.id === ev.stockId);
+            if (!stock) return;
+
+            const oldPrice = stock.price;
+            stock.change = ev.change;
+            stock.price = Math.max(10, Math.round(stock.basePrice * (1 + ev.change / 100) * 100) / 100);
+
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toLowerCase();
+            state.tickerMessages.unshift(`💥 CHAOS: ${ev.text}`);
+            state.breakingNews.unshift({
+                round: `R${state.currentRound}`,
+                stock: stock.name,
+                change: (ev.change >= 0 ? '+' : '') + ev.change + '%',
+                old: formatINR(oldPrice),
+                new: formatINR(stock.price),
+                text: ev.text,
+                time: timeStr
+            });
+
+            playSound('chaos');
+            saveAndBroadcast();
+            showToast(`CHAOS EVENT: ${ev.text}`, "warning");
+        }
+
+        function onAdminSliderInput(stockId, val) {
+            playSound('slide');
+            const num = parseFloat(val);
+            const stock = state.stocks.find(s => s.id === stockId);
+            if (!stock) return;
+
+            const badge = document.getElementById(`admin-badge-${stockId}`);
+            const preview = document.getElementById(`admin-price-preview-${stockId}`);
+            
+            const calcPrice = Math.max(10, Math.round(stock.basePrice * (1 + num / 100) * 100) / 100);
+
+            if (badge) {
+                badge.innerText = (num >= 0 ? '+' : '') + num.toFixed(0) + '%';
+                badge.className = `px-2 py-0.5 text-[10px] font-mono font-bold border ${num >= 0 ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800' : 'text-rose-400 bg-rose-950/60 border-rose-800'}`;
+            }
+            if (preview) {
+                preview.innerText = formatINR(calcPrice);
+            }
+        }
+
+        function setSliderPreset(stockId, val) {
+            playSound('click');
+            const slider = document.getElementById(`admin-slider-${stockId}`);
+            if (slider) {
+                slider.value = val;
+                onAdminSliderInput(stockId, val);
+            }
+        }
+
+        function applyAdminPriceChange(stockId) {
+            const slider = document.getElementById(`admin-slider-${stockId}`);
+            const pct = parseFloat(slider ? slider.value : 0);
+            const stock = state.stocks.find(s => s.id === stockId);
+
+            const oldPrice = stock.price;
+            stock.change = pct;
+            stock.price = Math.max(10, Math.round(stock.basePrice * (1 + pct / 100) * 100) / 100);
+
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true }).toLowerCase();
+            state.tickerMessages.unshift(`${stock.name} updated to ${formatINR(stock.price)} (${pct >= 0 ? '+' : ''}${pct}%)`);
+            state.breakingNews.unshift({
+                round: `R${state.currentRound}`,
+                stock: stock.name,
+                change: (pct >= 0 ? '+' : '') + pct.toFixed(1) + '%',
+                old: formatINR(oldPrice),
+                new: formatINR(stock.price),
+                text: `Price adjusted via slider`,
+                time: timeStr
+            });
+
+            playSound('buy');
+            saveAndBroadcast();
+            showToast(`Updated ${stock.name} price to ${formatINR(stock.price)}!`);
+        }
+
+        function handleAdminExit() {
+            state.isAdmin = false;
+            state.view = 'landing';
+            saveAndBroadcast();
+        }
+
+        function switchView(v) {
+            state.view = v;
+            saveAndBroadcast();
+            window.scrollTo(0, 0);
+        }
+
+        window.onload = function() {
+            render();
+        };
+    </script>
+</body>
+</html>
